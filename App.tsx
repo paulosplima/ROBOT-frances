@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Message, AppMode, Lesson } from './types.ts';
 import RobotAvatar from './components/RobotAvatar.tsx';
 import ChatMessage from './components/ChatMessage.tsx';
@@ -78,9 +77,44 @@ const App: React.FC = () => {
     }
   }, [messages, isThinking]);
 
+  // Audio initialization
+  const initAudio = useCallback(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+  }, []);
+
+  const handlePlayAudio = async (text: string) => {
+    try {
+      initAudio();
+      
+      const base64Audio = await generateSpeech(text);
+      if (base64Audio && audioContextRef.current) {
+        const audioBuffer = await decodeAudioData(
+          decodeBase64(base64Audio),
+          audioContextRef.current,
+          24000,
+          1
+        );
+        const source = audioContextRef.current.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContextRef.current.destination);
+        source.start();
+      }
+    } catch (error) {
+      console.error('TTS Playback Error:', error);
+    }
+  };
+
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim() || isThinking) return;
+
+    // Initialize audio context on first user interaction if not already done
+    initAudio();
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -106,66 +140,44 @@ const App: React.FC = () => {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: responseText || 'Zut! J\'ai un petit problema técnico... (Ops! Tive um probleminha técnico...) 🤖',
+        content: responseText || 'Zut! J\'ai un petit problema técnico... 🤖',
         timestamp: Date.now(),
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      
-      if (messages.length < 2) {
-        handlePlayAudio(assistantMessage.content);
-      }
     } catch (error) {
-      console.error(error);
+      console.error('Gemini error:', error);
     } finally {
       setIsThinking(false);
     }
   };
 
-  const handlePlayAudio = async (text: string) => {
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      }
-      
-      const base64Audio = await generateSpeech(text);
-      if (base64Audio) {
-        const audioBuffer = await decodeAudioData(
-          decodeBase64(base64Audio),
-          audioContextRef.current,
-          24000,
-          1
-        );
-        const source = audioContextRef.current.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContextRef.current.destination);
-        source.start();
-      }
-    } catch (error) {
-      console.error('TTS Error:', error);
-    }
-  };
-
   const startLesson = (lesson: Lesson) => {
+    initAudio();
     setActiveLesson(lesson);
     setMode(AppMode.LESSON);
+    const welcome = `Salut ! Prêt para seu próximo match com a língua francesa? 🇫🇷 Hoje na Matchin vamos dominar: **${lesson.title}**. On y va ? (Vamos nessa?)`;
     setMessages([{
       id: 'init',
       role: 'assistant',
-      content: `Salut ! Prêt para seu próximo match com a língua francesa? 🇫🇷 Hoje na Matchin vamos dominar: **${lesson.title}**. On y va ? (Vamos nessa?)`,
+      content: welcome,
       timestamp: Date.now()
     }]);
+    handlePlayAudio(welcome);
   };
 
   const startFreeChat = () => {
+    initAudio();
     setMode(AppMode.CHAT);
     setActiveLesson(null);
+    const welcome = "Bonjour ! Eu sou o Benoît da Matchin. Vamos bater um papo em francês? Me conte sobre você! 🤖✨";
     setMessages([{
       id: 'init',
       role: 'assistant',
-      content: "Bonjour ! Eu sou o Benoît da Matchin. Vamos bater um papo em francês? Me conte sobre você! 🤖✨",
+      content: welcome,
       timestamp: Date.now()
     }]);
+    handlePlayAudio(welcome);
   };
 
   const goHome = () => {
@@ -175,9 +187,9 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden">
+    <div className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden" onClick={initAudio}>
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={goHome}>
           <div className="matchin-gradient p-2 rounded-xl">
             <Heart className="text-white fill-current" size={20} />
           </div>
@@ -200,7 +212,7 @@ const App: React.FC = () => {
           </button>
         ) : (
           <div className="hidden md:flex items-center gap-4">
-             <a href="https://matchin.com.br" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">MATCHIN.COM.BR</a>
+             <a href="https://matchin.com.br" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">Matchin.com.br</a>
           </div>
         )}
       </header>
@@ -208,7 +220,7 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-hidden relative flex flex-col">
         {mode === AppMode.HOME ? (
           <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
-            <div className="mt-8 mb-12 text-center">
+            <div className="mt-8 mb-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div className="relative inline-block">
                 <RobotAvatar size="lg" />
                 <div className="absolute -bottom-2 -right-2 bg-indigo-600 text-white p-2 rounded-full shadow-lg border-4 border-white">
@@ -221,7 +233,7 @@ const App: React.FC = () => {
               </p>
             </div>
 
-            <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
               <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 px-2">
                   <BookOpen size={14} /> Trilhas de Aprendizado
@@ -289,7 +301,7 @@ const App: React.FC = () => {
               </section>
             </div>
             
-            <footer className="mt-16 pb-8 text-center">
+            <footer className="mt-auto pb-8 text-center w-full">
                <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.3em]">
                  © 2024 MATCHIN.COM.BR • Powered by Gemini
                </p>
@@ -333,49 +345,52 @@ const App: React.FC = () => {
             </div>
 
             <div className="p-4 md:p-6 bg-white border-t border-slate-200">
-              <div className="max-w-4xl mx-auto flex items-center gap-3">
+              <form 
+                className="max-w-4xl mx-auto flex items-center gap-3"
+                onSubmit={handleSendMessage}
+              >
                 <div className="flex-1 relative">
                   <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder={activeLesson ? `Traduzir para "${activeLesson.title}"...` : "Escreva em francês ou peça ajuda..."}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-[2rem] px-6 py-5 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-300 transition-all text-slate-800 placeholder:text-slate-400 pr-14 shadow-inner"
+                    placeholder={activeLesson ? `Pratique agora: "${activeLesson.title}"...` : "Escreva em francês ou peça ajuda..."}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-[2rem] px-6 py-4 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-300 transition-all text-slate-800 placeholder:text-slate-400 pr-14 shadow-inner"
                   />
                   <button
-                    onClick={() => handleSendMessage()}
+                    type="submit"
                     disabled={!input.trim() || isThinking}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full transition-all ${
+                    className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-3 rounded-full transition-all ${
                       input.trim() && !isThinking 
                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
                         : 'bg-slate-100 text-slate-300'
                     }`}
                   >
-                    <Send size={20} />
+                    <Send size={18} />
                   </button>
                 </div>
                 
                 <button 
-                  className="p-5 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-all flex items-center justify-center group shadow-sm"
+                  type="button"
+                  className="p-4 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-all flex items-center justify-center group shadow-sm"
                   title="Recurso de Voz (Em breve na Matchin)"
                 >
-                  <Mic size={24} className="group-hover:scale-110 transition-transform" />
+                  <Mic size={22} className="group-hover:scale-110 transition-transform" />
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         )}
       </main>
 
-      <nav className="bg-white border-t border-slate-200 px-8 py-4 flex items-center justify-around md:hidden">
-        <button onClick={goHome} className={`flex flex-col items-center gap-1.5 transition-colors ${mode === AppMode.HOME ? 'text-indigo-600' : 'text-slate-300'}`}>
-          <Home size={22} className={mode === AppMode.HOME ? 'fill-indigo-50' : ''} />
+      <nav className="bg-white border-t border-slate-200 px-8 py-3.5 flex items-center justify-around md:hidden">
+        <button onClick={goHome} className={`flex flex-col items-center gap-1 transition-colors ${mode === AppMode.HOME ? 'text-indigo-600' : 'text-slate-300'}`}>
+          <Home size={20} className={mode === AppMode.HOME ? 'fill-indigo-50' : ''} />
           <span className="text-[10px] font-black uppercase tracking-tighter">Início</span>
         </button>
-        <button onClick={startFreeChat} className={`flex flex-col items-center gap-1.5 transition-colors ${mode === AppMode.CHAT ? 'text-indigo-600' : 'text-slate-300'}`}>
-          <MessageSquare size={22} className={mode === AppMode.CHAT ? 'fill-indigo-50' : ''} />
-          <span className="text-[10px] font-black uppercase tracking-tighter">Chat</span>
+        <button onClick={startFreeChat} className={`flex flex-col items-center gap-1 transition-colors ${mode === AppMode.CHAT || mode === AppMode.LESSON ? 'text-indigo-600' : 'text-slate-300'}`}>
+          <MessageSquare size={20} className={mode === AppMode.CHAT || mode === AppMode.LESSON ? 'fill-indigo-50' : ''} />
+          <span className="text-[10px] font-black uppercase tracking-tighter">Aprender</span>
         </button>
       </nav>
     </div>

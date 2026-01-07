@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 
 export const getGeminiResponse = async (messages: {role: string, content: string}[], systemInstruction: string) => {
@@ -23,14 +22,18 @@ export const getGeminiResponse = async (messages: {role: string, content: string
 };
 
 export const generateSpeech = async (text: string) => {
+  // Strip markdown and focus on the core message for better TTS quality
+  const cleanText = text.replace(/[*#_\[\]()]/g, '').trim();
+  
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-preview-tts",
-    contents: [{ parts: [{ text: `Dites avec uma voz amicale et claire : ${text}` }] }],
+    contents: [{ parts: [{ text: cleanText }] }],
     config: {
       responseModalities: [Modality.AUDIO],
       speechConfig: {
         voiceConfig: {
+          // 'Puck' is a great masculine-neutral voice for a robot like Benoît
           prebuiltVoiceConfig: { voiceName: 'Puck' },
         },
       },
