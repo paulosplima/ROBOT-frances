@@ -1,6 +1,6 @@
 {
-  "name": "Benoît: O Robô Francês",
-  "description": "Um assistente inteligente e amigável que ensina francês através de conversas interativas e lições personalizadas.",
+  "name": "Benoît by Matchin",
+  "description": "Seu assistente inteligente de francês da matchin.com.br. Aprenda através de conversas reais e personalizadas.",
   "requestFramePermissions": [
     "microphone"
   ]
