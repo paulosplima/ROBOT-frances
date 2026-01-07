@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, AppMode, Lesson } from './types';
-import RobotAvatar from './components/RobotAvatar';
-import ChatMessage from './components/ChatMessage';
-import { getGeminiResponse, generateSpeech } from './services/gemini';
-import { decodeBase64, decodeAudioData } from './utils/audio';
+import { Message, AppMode, Lesson } from './types.ts';
+import RobotAvatar from './components/RobotAvatar.tsx';
+import ChatMessage from './components/ChatMessage.tsx';
+import { getGeminiResponse, generateSpeech } from './services/gemini.ts';
+import { decodeBase64, decodeAudioData } from './utils/audio.ts';
 import { 
   Send, 
   BookOpen, 
@@ -106,7 +106,7 @@ const App: React.FC = () => {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: responseText || 'Zut! J\'ai un petit problème technique... (Ops! Tive um probleminha técnico...) 🤖',
+        content: responseText || 'Zut! J\'ai un petit problema técnico... (Ops! Tive um probleminha técnico...) 🤖',
         timestamp: Date.now(),
       };
 
