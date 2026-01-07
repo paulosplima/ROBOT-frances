@@ -1,0 +1,7 @@
+{
+  "name": "Benoît: O Robô Francês",
+  "description": "Um assistente inteligente e amigável que ensina francês através de conversas interativas e lições personalizadas.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
