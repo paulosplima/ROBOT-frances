@@ -176,7 +176,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      {/* Header Branded for Matchin.com.br */}
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="matchin-gradient p-2 rounded-xl">
@@ -201,7 +200,7 @@ const App: React.FC = () => {
           </button>
         ) : (
           <div className="hidden md:flex items-center gap-4">
-             <a href="https://matchin.com.br" className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">MATCHIN.COM.BR</a>
+             <a href="https://matchin.com.br" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">MATCHIN.COM.BR</a>
           </div>
         )}
       </header>
@@ -298,7 +297,6 @@ const App: React.FC = () => {
           </div>
         ) : (
           <div className="flex-1 flex flex-col h-full bg-slate-50">
-            {/* Active Session Info */}
             <div className="bg-white/80 backdrop-blur-md px-6 py-2 border-b border-slate-100 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
@@ -309,7 +307,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Chat Area */}
             <div 
               ref={scrollRef}
               className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth"
@@ -335,7 +332,6 @@ const App: React.FC = () => {
               )}
             </div>
 
-            {/* Input Bar */}
             <div className="p-4 md:p-6 bg-white border-t border-slate-200">
               <div className="max-w-4xl mx-auto flex items-center gap-3">
                 <div className="flex-1 relative">
@@ -372,7 +368,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Persistent Navigation (Desktop Side / Mobile Bottom) */}
       <nav className="bg-white border-t border-slate-200 px-8 py-4 flex items-center justify-around md:hidden">
         <button onClick={goHome} className={`flex flex-col items-center gap-1.5 transition-colors ${mode === AppMode.HOME ? 'text-indigo-600' : 'text-slate-300'}`}>
           <Home size={22} className={mode === AppMode.HOME ? 'fill-indigo-50' : ''} />
